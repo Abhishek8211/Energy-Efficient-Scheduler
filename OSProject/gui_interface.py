@@ -4,6 +4,7 @@ import csv
 import datetime
 import random
 import math
+import time
 
 class ModernSchedulerApp:
     def __init__(self, root):
@@ -65,9 +66,12 @@ class ModernSchedulerApp:
         
         self.setup_styles()
         self.create_menu_bar()
+        self.create_background_particles()
         self.create_widgets()
+        self.create_cpu_meter()
         self.apply_theme()
         self.start_idle_animation()
+        self.bind_keyboard_shortcuts()
 
     def setup_styles(self):
         """Enhanced TTK styles"""
@@ -148,6 +152,13 @@ class ModernSchedulerApp:
 
         self.create_battery_widget()
         self.create_status_indicator()
+        
+        # Lower particle canvas to background
+        if hasattr(self, 'particle_canvas'):
+            try:
+                self.particle_canvas.lower(self.header_frame)
+            except:
+                pass
         
         # 2. STATISTICS CARDS
         self.create_stats_dashboard(main_container)
@@ -360,7 +371,7 @@ class ModernSchedulerApp:
         tk.Label(frame, text="📊 PROCESS EXECUTION TIMELINE", 
                 font=("Segoe UI", 12, "bold")).pack(pady=10)
         
-        self.gantt_canvas = tk.Canvas(frame, height=300)
+        self.gantt_canvas = tk.Canvas(frame, height=300, bg=self.colors["panel"])
         self.gantt_canvas.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
         legend_frame = tk.Frame(frame)
@@ -384,7 +395,7 @@ class ModernSchedulerApp:
         tk.Label(frame, text="⚡ ENERGY CONSUMPTION ANALYSIS", 
                 font=("Segoe UI", 12, "bold")).pack(pady=10)
         
-        self.energy_canvas = tk.Canvas(frame, height=300)
+        self.energy_canvas = tk.Canvas(frame, height=300, bg=self.colors["panel"])
         self.energy_canvas.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
         info_frame = tk.Frame(frame)
@@ -403,22 +414,42 @@ class ModernSchedulerApp:
         self.lbl_savings.pack(side=tk.LEFT, padx=20)
 
     def create_battery_widget(self):
-        """Battery indicator"""
+        """Animated circular progress ring"""
         self.batt_frame = tk.Frame(self.header_frame)
         self.batt_frame.place(relx=0.02, rely=0.2, anchor="nw")
-
-        self.canvas_batt = tk.Canvas(self.batt_frame, width=70, height=35, highlightthickness=0)
+        
+        self.canvas_batt = tk.Canvas(self.batt_frame, width=80, height=80, 
+                                    highlightthickness=0, bg=self.colors["bg"])
         self.canvas_batt.pack(side=tk.LEFT)
         
-        self.batt_body = self.canvas_batt.create_rectangle(2, 8, 58, 28, width=2)
-        self.batt_tip = self.canvas_batt.create_rectangle(58, 13, 64, 23)
-        self.batt_level = self.canvas_batt.create_rectangle(4, 10, 56, 26, outline="")
-        self.batt_text = self.canvas_batt.create_text(30, 18, text="100%", 
-                                                      font=("Segoe UI", 9, "bold"))
+        # Background circle
+        self.canvas_batt.create_oval(10, 10, 70, 70, outline=self.colors["fg_secondary"], 
+                                    width=6)
+        
+        # Animated arc (progress)
+        self.batt_arc = self.canvas_batt.create_arc(10, 10, 70, 70, 
+                                                    start=90, extent=0,
+                                                    outline=self.colors["green"], 
+                                                    width=6, style='arc')
+        
+        # Center text
+        self.batt_text = self.canvas_batt.create_text(40, 40, text="100%", 
+                                                      font=("Segoe UI", 14, "bold"),
+                                                      fill=self.colors["green"])
         
         self.lbl_batt_status = tk.Label(self.batt_frame, text="⚡ Full", 
-                                       font=("Segoe UI", 9, "bold"))
+                                       font=("Segoe UI", 9, "bold"),
+                                       bg=self.colors["bg"], fg=self.colors["green"])
         self.lbl_batt_status.pack(side=tk.LEFT, padx=8)
+        
+        self.animate_battery_ring()
+
+    def animate_battery_ring(self, angle=0):
+        """Smooth circular animation"""
+        target_angle = 360
+        if angle < target_angle:
+            self.canvas_batt.itemconfig(self.batt_arc, extent=-angle)
+            self.root.after(20, lambda: self.animate_battery_ring(angle + 5))
 
     def create_status_indicator(self):
         """Status indicator"""
@@ -435,15 +466,15 @@ class ModernSchedulerApp:
         self.lbl_status.pack(side=tk.LEFT)
 
     def start_idle_animation(self):
-        """Pulsing animation"""
+        """Pulsing status dot animation"""
         def pulse():
             try:
-                current_color = self.canvas_batt.itemcget(self.batt_level, 'fill')
+                current_color = self.status_dot.itemcget(self.dot, 'fill')
                 if current_color == self.colors["green"]:
                     new_color = self.lighten_color(self.colors["green"])
                 else:
                     new_color = self.colors["green"]
-                self.canvas_batt.itemconfig(self.batt_level, fill=new_color)
+                self.status_dot.itemconfig(self.dot, fill=new_color)
                 self.animation_id = self.root.after(1000, pulse)
             except:
                 pass
@@ -457,6 +488,178 @@ class ModernSchedulerApp:
         g = min(255, g + 30)
         b = min(255, b + 30)
         return f'#{r:02x}{g:02x}{b:02x}'
+
+    def create_background_particles(self):
+        """Floating particles background"""
+        self.particle_canvas = tk.Canvas(self.root, highlightthickness=0, bg=self.colors["bg"])
+        self.particle_canvas.place(x=0, y=0, relwidth=1, relheight=1)
+        # Will be lowered after main widgets are created
+        
+        self.particles = []
+        for _ in range(25):
+            x = random.randint(0, 1200)
+            y = random.randint(0, 850)
+            size = random.randint(2, 4)
+            particle = self.particle_canvas.create_oval(x, y, x+size, y+size, 
+                                                        fill=self.colors["blue"], 
+                                                        outline="")
+            self.particles.append({'id': particle, 'x': x, 'y': y, 'speed': random.uniform(0.3, 1.5)})
+        
+        self.animate_particles()
+
+    def animate_particles(self):
+        """Move particles"""
+        try:
+            for p in self.particles:
+                p['y'] += p['speed']
+                if p['y'] > 850:
+                    p['y'] = 0
+                    p['x'] = random.randint(0, 1200)
+                
+                self.particle_canvas.coords(p['id'], p['x'], p['y'], 
+                                           p['x']+3, p['y']+3)
+            
+            self.root.after(50, self.animate_particles)
+        except:
+            pass
+
+    def create_cpu_meter(self):
+        """Animated CPU usage meter"""
+        meter_frame = tk.Frame(self.header_frame, bg=self.colors["bg"])
+        meter_frame.place(relx=0.78, rely=0.2, anchor="nw")
+        
+        tk.Label(meter_frame, text="💻 CPU LOAD", font=("Segoe UI", 9, "bold"),
+                bg=self.colors["bg"], fg=self.colors["text"]).pack()
+        
+        self.cpu_canvas = tk.Canvas(meter_frame, width=120, height=22, 
+                                   highlightthickness=0, bg=self.colors["input_bg"])
+        self.cpu_canvas.pack(pady=5)
+        
+        self.cpu_canvas.create_rectangle(0, 0, 120, 22, outline=self.colors["fg_secondary"])
+        self.cpu_bar = self.cpu_canvas.create_rectangle(0, 0, 0, 22, 
+                                                        fill=self.colors["green"], 
+                                                        outline="")
+        
+        self.cpu_label = tk.Label(meter_frame, text="0%", 
+                                 font=("Segoe UI", 10, "bold"),
+                                 bg=self.colors["bg"], fg=self.colors["green"])
+        self.cpu_label.pack(pady=2)
+        
+        self.simulate_cpu_usage()
+
+    def simulate_cpu_usage(self):
+        """Simulate CPU meter"""
+        try:
+            if self.simulation_running:
+                usage = random.randint(40, 95)
+                color = self.colors["green"] if usage < 60 else self.colors["orange"] if usage < 80 else self.colors["red"]
+            else:
+                usage = random.randint(5, 25)
+                color = self.colors["green"]
+            
+            self.cpu_canvas.coords(self.cpu_bar, 0, 0, usage * 1.2, 22)
+            self.cpu_canvas.itemconfig(self.cpu_bar, fill=color)
+            self.cpu_label.config(text=f"{usage}%", fg=color)
+            
+            self.root.after(1000, self.simulate_cpu_usage)
+        except:
+            pass
+
+    def show_toast(self, message, icon="✅", color="green", duration=2500):
+        """Modern toast notification"""
+        toast = tk.Toplevel(self.root)
+        toast.overrideredirect(True)
+        toast.attributes('-topmost', True)
+        
+        screen_width = self.root.winfo_screenwidth()
+        toast_width = 350
+        toast_x = screen_width - toast_width - 20
+        toast.geometry(f"{toast_width}x80+{toast_x}+20")
+        
+        toast_frame = tk.Frame(toast, bg=self.colors[color], relief="flat", bd=0)
+        toast_frame.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
+        
+        inner_frame = tk.Frame(toast_frame, bg=self.colors["panel"])
+        inner_frame.pack(fill=tk.BOTH, expand=True, padx=3, pady=3)
+        
+        tk.Label(inner_frame, text=icon, font=("Segoe UI", 24), 
+                bg=self.colors["panel"], fg=self.colors[color]).pack(side=tk.LEFT, padx=15)
+        
+        tk.Label(inner_frame, text=message, font=("Segoe UI", 11, "bold"),
+                bg=self.colors["panel"], fg=self.colors["text"], wraplength=250).pack(side=tk.LEFT, padx=10)
+        
+        def fade_out(alpha=1.0):
+            if alpha > 0:
+                toast.attributes('-alpha', alpha)
+                toast.after(50, lambda: fade_out(alpha - 0.05))
+            else:
+                toast.destroy()
+        
+        toast.after(duration, fade_out)
+
+    def show_confetti(self):
+        """Celebration confetti"""
+        confetti_canvas = tk.Canvas(self.root, highlightthickness=0, bg=self.colors["bg"])
+        confetti_canvas.place(x=0, y=0, relwidth=1, relheight=1)
+        # Lift above all widgets
+        try:
+            confetti_canvas.tkraise()
+        except:
+            pass
+        
+        colors = [self.colors["green"], self.colors["blue"], 
+                 self.colors["purple"], self.colors["orange"], self.colors["yellow"]]
+        
+        particles = []
+        for _ in range(80):
+            x = random.randint(0, 1200)
+            y = random.randint(-100, 0)
+            color = random.choice(colors)
+            size = random.randint(5, 10)
+            
+            p = confetti_canvas.create_oval(x, y, x+size, y+size, fill=color, outline="")
+            particles.append({
+                'id': p, 'x': x, 'y': y, 
+                'vx': random.uniform(-2, 2),
+                'vy': random.uniform(3, 8)
+            })
+        
+        def animate_confetti(frame=0):
+            if frame < 100:
+                for p in particles:
+                    p['x'] += p['vx']
+                    p['y'] += p['vy']
+                    p['vy'] += 0.2
+                    
+                    try:
+                        confetti_canvas.coords(p['id'], p['x'], p['y'], 
+                                              p['x']+6, p['y']+6)
+                    except:
+                        pass
+                
+                try:
+                    confetti_canvas.after(30, lambda: animate_confetti(frame + 1))
+                except:
+                    pass
+            else:
+                try:
+                    confetti_canvas.destroy()
+                except:
+                    pass
+        
+        animate_confetti()
+
+    def bind_keyboard_shortcuts(self):
+        """Keyboard shortcuts for quick actions"""
+        self.root.bind('<Control-i>', lambda e: self.import_csv())
+        self.root.bind('<Control-e>', lambda e: self.export_data())
+        self.root.bind('<Control-d>', lambda e: self.clear_all())
+        self.root.bind('<Control-r>', lambda e: self.run_simulation())
+        self.root.bind('<Control-a>', lambda e: self.ent_pid.focus())
+        self.root.bind('<Control-t>', lambda e: self.toggle_theme())
+        self.root.bind('<F1>', lambda e: self.show_help())
+        self.root.bind('<F5>', lambda e: self.run_simulation())
+        self.root.bind('<Delete>', lambda e: self.delete_selected())
 
     # --- FUNCTIONALITY ---
 
@@ -503,14 +706,17 @@ class ModernSchedulerApp:
                 entry.delete(0, tk.END)
             self.ent_pid.focus()
             
+            self.show_toast(f"Process {pid} added!", "✅", "green")
             self.flash_status("✅ Process added successfully!", "#27ae60")
             
         except ValueError as e:
+            self.show_toast(str(e), "❌", "red")
             messagebox.showerror("Invalid Input", str(e))
 
     def run_simulation(self):
         """Run simulation with animation"""
         if not self.process_list:
+            self.show_toast("Add processes first!", "⚠️", "orange")
             messagebox.showerror("Error", "No processes to run!")
             return
         
@@ -519,16 +725,28 @@ class ModernSchedulerApp:
             return
         
         self.simulation_running = True
+        self.show_toast("Simulation started!", "▶️", "blue")
         self.flash_status("⚙️ Running simulation...", "#3498db")
         
         self.root.after(100, self.animate_simulation)
 
     def animate_simulation(self):
-        """Animate execution"""
+        """Animate execution with progress bar"""
         self.gantt_canvas.delete("all")
         
+        # Add progress bar at top
+        progress_bg = self.gantt_canvas.create_rectangle(50, 20, 600, 35, 
+                                                         fill=self.colors["input_bg"], 
+                                                         outline=self.colors["fg_secondary"])
+        progress_bar = self.gantt_canvas.create_rectangle(50, 20, 50, 35, 
+                                                          fill=self.colors["blue"], 
+                                                          outline="")
+        progress_text = self.gantt_canvas.create_text(325, 27, text="0%", 
+                                                     font=("Segoe UI", 10, "bold"),
+                                                     fill=self.colors["text"])
+        
         x_pos = 50
-        y_base = 100
+        y_base = 120
         colors = {"Foreground": "#ff6b6b", "Background": "#4ecdc4"}
         
         sorted_processes = sorted(self.process_list, 
@@ -536,8 +754,15 @@ class ModernSchedulerApp:
         
         total_energy_standard = 0
         total_energy_dvfs = 0
+        total_processes = len(sorted_processes)
         
         for i, process in enumerate(sorted_processes):
+            # Update progress bar
+            progress_percent = (i + 1) / total_processes
+            progress_width = 50 + (550 * progress_percent)
+            self.gantt_canvas.coords(progress_bar, 50, 20, progress_width, 35)
+            self.gantt_canvas.itemconfig(progress_text, text=f"{int(progress_percent * 100)}%")
+            
             burst = int(process["burst"])
             width = burst * 4
             ptype = process["type"]
@@ -559,6 +784,7 @@ class ModernSchedulerApp:
                 process["priority"], ptype, "Running"
             ))
             self.root.update()
+            time.sleep(0.5)
             
             if ptype == "Foreground":
                 energy = burst * 1.0
@@ -570,8 +796,6 @@ class ModernSchedulerApp:
                 total_energy_standard += energy_std
                 total_energy_dvfs += energy_dvfs
             
-            self.root.after(500)
-            
             self.tree.item(process["item_id"], 
                           tags=('completed',),
                           values=(process["pid"], process["arrival"], 
@@ -579,6 +803,7 @@ class ModernSchedulerApp:
                                  ptype, "Completed"))
             
             x_pos += width + 20
+            self.root.update()
         
         savings = ((total_energy_standard - total_energy_dvfs) / total_energy_standard * 100) if total_energy_standard > 0 else 0
         
@@ -595,6 +820,8 @@ class ModernSchedulerApp:
         
         self.simulation_running = False
         self.flash_status("✅ Simulation completed!", "#27ae60")
+        
+        self.show_confetti()
         
         messagebox.showinfo("Success", 
                           f"Simulation Complete!\n\n"
@@ -630,7 +857,7 @@ class ModernSchedulerApp:
         )
 
     def update_battery(self, is_efficient=True):
-        """Update battery"""
+        """Update animated ring"""
         if is_efficient:
             level = 90
             color = self.colors["green"]
@@ -640,11 +867,9 @@ class ModernSchedulerApp:
             color = self.colors["red"]
             status = "⚠️ High Drain"
         
-        width = 52 * (level / 100)
-        self.canvas_batt.coords(self.batt_level, 4, 10, 4 + width, 26)
-        self.canvas_batt.itemconfig(self.batt_level, fill=color)
-        self.canvas_batt.itemconfig(self.batt_text, text=f"{level}%", fill="white")
-        
+        extent_angle = -(level / 100 * 360)
+        self.canvas_batt.itemconfig(self.batt_arc, extent=extent_angle, outline=color)
+        self.canvas_batt.itemconfig(self.batt_text, text=f"{level}%", fill=color)
         self.lbl_batt_status.config(text=status, fg=color)
 
     def update_statistics(self):
@@ -956,14 +1181,24 @@ For issues, contact Team Abhi
         for (btn, color_key) in self.action_buttons.values():
             btn.configure(bg=c[color_key], fg="white")
         
-        self.batt_frame.configure(bg=c["bg"])
-        self.canvas_batt.configure(bg=c["bg"])
-        self.canvas_batt.itemconfig(self.batt_body, outline=c["text"])
-        self.canvas_batt.itemconfig(self.batt_tip, fill=c["text"])
+        if hasattr(self, 'batt_frame'):
+            self.batt_frame.configure(bg=c["bg"])
+            self.canvas_batt.configure(bg=c["bg"])
+            self.lbl_batt_status.configure(bg=c["bg"])
         
-        self.status_frame.configure(bg=c["bg"])
-        self.status_dot.configure(bg=c["bg"])
-        self.lbl_status.configure(bg=c["bg"], fg=c["text"])
+        if hasattr(self, 'particle_canvas'):
+            self.particle_canvas.configure(bg=c["bg"])
+        
+        if hasattr(self, 'gantt_canvas'):
+            self.gantt_canvas.configure(bg=c["panel"])
+        
+        if hasattr(self, 'energy_canvas'):
+            self.energy_canvas.configure(bg=c["panel"])
+        
+        if hasattr(self, 'status_frame'):
+            self.status_frame.configure(bg=c["bg"])
+            self.status_dot.configure(bg=c["bg"])
+            self.lbl_status.configure(bg=c["bg"], fg=c["text"])
         
         self.style.configure("Treeview", background=c["panel"], 
                            foreground=c["text"], fieldbackground=c["panel"])
