@@ -51,7 +51,7 @@ python test_integration.py
               │
               ▼
 ┌─────────────────────────────────────────┐
-│      Logic Layer (Raaji)                │
+│      Logic Layer (Rajeswari)                │
 │  • Process class                        │
 │  • FCFS scheduling                      │
 │  • DVFS energy calculation              │
@@ -120,4 +120,4 @@ All modules tested individually and integrated:
 Educational Project - LPU CSE316
 
 ## 📞 Support
-For issues, contact Team Abhi
+For issues, contact ***
