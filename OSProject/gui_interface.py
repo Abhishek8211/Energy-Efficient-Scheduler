@@ -36,24 +36,24 @@ class ModernSchedulerApp:
                 "error": "#ff5370"
             },
             "light": {
-                "bg": "#f0f4f8",
-                "bg_gradient": "#e3ebf3",
-                "panel": "#ffffff",
-                "panel_hover": "#f8fafc",
-                "text": "#1e293b",
-                "input_bg": "#ffffff",
-                "green": "#10b981",
-                "blue": "#3b82f6",
-                "purple": "#8b5cf6",
-                "red": "#ef4444",
-                "orange": "#f59e0b",
-                "yellow": "#eab308",
-                "fg_secondary": "#64748b",
+                "bg": "#fef9e7",
+                "bg_gradient": "#fef5d4",
+                "panel": "#fffef8",
+                "panel_hover": "#fffcf0",
+                "text": "#2d2416",
+                "input_bg": "#fffef9",
+                "green": "#16a34a",
+                "blue": "#0284c7",
+                "purple": "#7c3aed",
+                "red": "#dc2626",
+                "orange": "#ea580c",
+                "yellow": "#ca8a04",
+                "fg_secondary": "#78716c",
                 "btn_text": "#ffffff",
-                "shadow": "#94a3b8",
-                "success": "#10b981",
-                "warning": "#f59e0b",
-                "error": "#ef4444"
+                "shadow": "#d6d3d1",
+                "success": "#16a34a",
+                "warning": "#ea580c",
+                "error": "#dc2626"
             }
         }
         
