@@ -40,10 +40,24 @@ def schedule_tasks(process_list):
     sorted_list = sorted(process_list, key=lambda process: process.arrival)
     
     print("Processes sorted by Arrival Time (FCFS):")
+    # 2. DVFS and Energy Calculation (New Logic for Commit 3)
     for process in sorted_list:
-        # Using the __repr__ method added in Commit 1 for clear output
-        print(process)
         
+        # Determine CPU Frequency (freq)
+        frequency = 1.0 
+        if process.type == 'Foreground':
+            frequency = 1.0  # If Type == Foreground: Set freq = 1.0[span_0](end_span)
+        elif process.type == 'Background':
+            frequency = 0.5  # If Type == Background: Set freq = 0.5[span_1](end_span)
+
+        # [span_2](start_span)Calculate Energy: Energy = Time × Frequency^2[span_2](end_span)
+        time_used = process.burst 
+        process.energy_consumed = time_used * (frequency ** 2)
+        
+        # Print results
+        print(f"PID {process.pid}: Arrival={process.arrival}, Burst={process.burst}, "
+              f"Type='{process.type}', Freq={frequency}, Energy={process.energy_consumed:.2f}")
+
     return sorted_list
     
 # You can test this by adding a small example block to the bottom of logic.py temporarily:
