@@ -39,3 +39,58 @@ def plot_energy_comparison(standard_energy: float, efficient_energy: float):
 
 # Optional: Test the function
 # plot_energy()
+
+import matplotlib.colors as mcolors
+
+# --- Helper Function for Gantt Chart (Good practice) ---
+def get_color(process_id):
+    """
+    Generates a unique, distinct color for a given process ID.
+    """
+    cmap = plt.get_cmap('tab10')
+    return cmap(process_id % 10)
+
+# -------------------------------------------------------------------
+
+# This function completes the task for Commit 2
+
+    # plt.show() # Remove this if you are integrating, keep for testing
+
+# -------------------------------------------------------------------
+
+# This function completes the task for Commit 3
+def draw_gantt_chart(process_schedule: list):
+    """
+    Visualizes the CPU schedule timeline as a Gantt Chart.
+    """
+    if not process_schedule:
+        print("No schedule data to draw the Gantt Chart.")
+        return
+
+    process_ids = sorted(list(set(p['pid'] for p in process_schedule)))
+    num_processes = len(process_ids)
+    pid_to_index = {pid: i for i, pid in enumerate(process_ids)}
+    max_time = max(p['end'] for p in process_schedule)
+
+
+    fig, ax = plt.subplots(figsize=(12, num_processes * 0.7 + 2))
+
+    for p in process_schedule:
+        pid = p['pid']
+        start_time = p['start']
+        duration = p['end'] - p['start']
+        y_pos = pid_to_index[pid]
+        color = get_color(pid)
+
+        # Use plt.barh (horizontal bars) as required [cite: 50]
+        ax.barh(y_pos, duration, left=start_time, height=0.6, 
+                color=color, edgecolor='black', linewidth=0.5)
+        
+    ax.set_yticks(range(num_processes))
+    ax.set_yticklabels([f'Process {pid}' for pid in process_ids], fontsize=10)
+    ax.set_xlabel('Time (Units)', fontsize=12)
+    ax.set_title('⏱️ CPU Scheduling Timeline (Gantt Chart)', fontsize=16, fontweight='bold', pad=20)
+    ax.grid(axis='x', linestyle=':', alpha=0.6)
+
+    plt.tight_layout()
+    # plt.show() # Remove this if you are integrating, keep for testing
