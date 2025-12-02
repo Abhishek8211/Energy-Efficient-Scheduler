@@ -249,6 +249,43 @@ def get_gantt_data(process_list):
     return gantt_data
 
 
+def convert_to_visualization_format(process_list):
+    """
+    Convert Raaji's Process objects to Kaushiki's visualization format
+    
+    Kaushiki's draw_gantt_chart() expects:
+        [{'pid': 'P1', 'start': 0, 'end': 100}, ...]
+    
+    Raaji's Process has:
+        - pid, arrival_time, burst_time, completion_time
+    
+    Args:
+        process_list (list): List of scheduled Process objects
+        
+    Returns:
+        list: List of dicts formatted for Kaushiki's visualization
+    """
+    viz_data = []
+    
+    for process in sorted(process_list, key=lambda p: p.arrival_time):
+        # Calculate start time
+        if process.task_type == "Background":
+            execution_time = process.burst_time / process.frequency
+        else:
+            execution_time = process.burst_time
+        
+        start_time = process.completion_time - execution_time
+        end_time = process.completion_time
+        
+        viz_data.append({
+            'pid': process.pid,
+            'start': start_time,
+            'end': end_time
+        })
+    
+    return viz_data
+
+
 # Test the module
 if __name__ == "__main__":
     print("\n🧪 TESTING LOGIC MODULE\n")
