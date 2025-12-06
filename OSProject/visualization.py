@@ -1,3 +1,6 @@
+import matplotlib
+# Use TkAgg backend for better Tkinter integration
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -11,7 +14,14 @@ def plot_energy_comparison(standard_energy: float, efficient_energy: float):
     Modern, professional energy comparison chart with gradient bars,
     shadows, and enhanced visual appeal.
     """
-    labels = ['Standard\nScheduler', 'Energy-Efficient\nScheduler']
+    # Close any existing matplotlib figures to prevent memory leaks
+    plt.close('all')
+    
+    # Force garbage collection of old figures
+    import gc
+    gc.collect()
+    
+    labels = ['Standard\\nScheduler', 'Energy-Efficient\\nScheduler']
     energy_values = [standard_energy, efficient_energy]
 
     # Modern color palette with gradients
@@ -107,8 +117,13 @@ def plot_energy_comparison(standard_energy: float, efficient_energy: float):
                 facecolor='#0f172a')
     print("✅ Saved: energy_comparison.png")
     
-    fig.canvas.manager.set_window_title('⚡ Energy Consumption Analysis')
-    plt.show(block=True)
+    try:
+        fig.canvas.manager.set_window_title('⚡ Energy Consumption Analysis')
+    except:
+        pass
+    
+    # Use simple blocking show - works reliably
+    plt.show()
 
 
 # --- Helper Function for Gantt Chart (Good practice) ---
@@ -126,6 +141,13 @@ def draw_gantt_chart(process_schedule: list):
     Modern, professional Gantt chart with gradient bars, shadows,
     enhanced labels, and clean design.
     """
+    # Close any existing matplotlib figures to prevent memory leaks
+    plt.close('all')
+    
+    # Force garbage collection of old figures
+    import gc
+    gc.collect()
+    
     if not process_schedule:
         print("No schedule data to draw the Gantt Chart.")
         return
@@ -249,5 +271,10 @@ def draw_gantt_chart(process_schedule: list):
                 facecolor='#0f172a')
     print("✅ Saved: gantt_chart.png")
     
-    fig.canvas.manager.set_window_title('⏱️ CPU Scheduling Gantt Chart')
-    plt.show(block=True)
+    try:
+        fig.canvas.manager.set_window_title('⏱️ CPU Scheduling Gantt Chart')
+    except:
+        pass
+    
+    # Use simple blocking show - works reliably
+    plt.show()

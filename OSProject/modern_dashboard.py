@@ -8,6 +8,7 @@ from tkinter import messagebox, filedialog, Canvas
 import threading
 import csv
 import datetime
+import time
 
 # Set CustomTkinter appearance
 ctk.set_appearance_mode("dark")
@@ -86,6 +87,10 @@ class FuturisticDashboard:
         self.progress_bar = None
         self.progress_label = None
         self.status_blink_id = None
+        
+        # Thread tracking to prevent multiple chart windows
+        self.gantt_thread = None
+        self.energy_thread = None
         
         self.create_dashboard()
         self.bind_keyboard_shortcuts()
@@ -848,6 +853,10 @@ class FuturisticDashboard:
             self.metric_cards['dvfs'][0].configure(text="0 mW")
             self.metric_cards['savings'][0].configure(text="0 %")
             
+            # Reset thread tracking
+            self.gantt_thread = None
+            self.energy_thread = None
+            
             self.update_process_display()
             self.update_stats()
             self.show_toast("✓ All cleared!", self.colors['danger'])
@@ -1124,12 +1133,34 @@ class FuturisticDashboard:
             messagebox.showwarning("No Data", "Run simulation first!")
             return
         
+        # Check if a Gantt chart thread is already running
+        if self.gantt_thread and self.gantt_thread.is_alive():
+            self.show_toast("📊 Gantt chart is already open!", self.colors['warning'])
+            return
+        
         try:
             gantt_data = convert_to_visualization_format(self.scheduled_processes)
-            threading.Thread(target=lambda: draw_gantt_chart(gantt_data), daemon=True).start()
-            self.show_toast("📊 Opening chart...", self.colors['primary'])
+            # Use non-daemon thread so chart stays open
+            self.gantt_thread = threading.Thread(
+                target=lambda: self._show_gantt_safe(gantt_data), 
+                daemon=False
+            )
+            self.gantt_thread.start()
+            self.show_toast("📊 Opening Gantt Chart...", self.colors['primary'])
         except Exception as e:
-            messagebox.showerror("Error", f"Failed:\n{str(e)}")
+            messagebox.showerror("Error", f"Failed to open Gantt chart:\n{str(e)}")
+    
+    def _show_gantt_safe(self, gantt_data):
+        """Safely show Gantt chart with proper cleanup"""
+        try:
+            # Small delay to ensure thread is properly initialized
+            time.sleep(0.05)
+            draw_gantt_chart(gantt_data)
+        except Exception as e:
+            print(f"Error showing Gantt chart: {e}")
+        finally:
+            # Mark thread as completed
+            self.gantt_thread = None
     
     def show_energy_chart(self):
         """Show full energy chart"""
@@ -1137,14 +1168,33 @@ class FuturisticDashboard:
             messagebox.showwarning("No Data", "Run simulation first!")
             return
         
+        # Check if an Energy chart thread is already running
+        if self.energy_thread and self.energy_thread.is_alive():
+            self.show_toast("⚡ Energy chart is already open!", self.colors['warning'])
+            return
+        
         try:
-            threading.Thread(
-                target=lambda: plot_energy_comparison(self.last_std_energy, self.last_dvfs_energy),
-                daemon=True
-            ).start()
-            self.show_toast("⚡ Opening chart...", self.colors['primary'])
+            # Use non-daemon thread so chart stays open
+            self.energy_thread = threading.Thread(
+                target=lambda: self._show_energy_safe(self.last_std_energy, self.last_dvfs_energy),
+                daemon=False
+            )
+            self.energy_thread.start()
+            self.show_toast("⚡ Opening Energy Chart...", self.colors['primary'])
         except Exception as e:
-            messagebox.showerror("Error", f"Failed:\n{str(e)}")
+            messagebox.showerror("Error", f"Failed to open Energy chart:\n{str(e)}")
+    
+    def _show_energy_safe(self, std_energy, dvfs_energy):
+        """Safely show Energy chart with proper cleanup"""
+        try:
+            # Small delay to ensure thread is properly initialized
+            time.sleep(0.05)
+            plot_energy_comparison(std_energy, dvfs_energy)
+        except Exception as e:
+            print(f"Error showing Energy chart: {e}")
+        finally:
+            # Mark thread as completed
+            self.energy_thread = None
     
     def save_to_csv(self):
         """Save to CSV with beautiful formatting"""
