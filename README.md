@@ -679,7 +679,7 @@ This project was developed as part of the **CSE316 Operating Systems** course. F
 
 ### ⭐ Star this repository if you found it helpful!
 
-**Made with ❤️ by Team OS Project**
+**Made with passion by Team OS Project**
 
 _Efficient Computing for a Sustainable Future_
 
